@@ -1,0 +1,34 @@
+version: '3.8'
+
+# services:
+#   backend:
+#     build: .
+#     ports:
+#       - "3041:3000"   # สมมติแอปคุณรันบน port 3000
+#     environment:
+#       - DB_HOST=host.docker.internal
+#       - DB_PORT=3307
+#       - DB_USER=your_mysql_user
+#       - DB_PASS=your_mysql_password
+#       - DB_NAME=your_database_name
+#     # ถ้าใช้ node หรือแอปที่ต้องใช้คำสั่งเริ่มต้น ก็ใส่ command หรือ entrypoint ได้ เช่น
+#     # command: npm start
+
+services:
+  backend:
+    build: .
+    ports:
+      - "3041:3000"
+    volumes:
+      - .:/app
+    working_dir: /app
+    restart: always
+    # command: nodemon --watch . --exec node server.js
+    command: nodemon --legacy-watch --watch . --exec node server.js
+    environment:
+      - DB_HOST=host.docker.internal
+      - DB_PORT=3307
+      - DB_USER=your_mysql_user
+      - DB_PASS=your_mysql_password
+      - DB_NAME=your_database_name
+

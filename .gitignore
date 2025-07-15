@@ -1,0 +1,5 @@
+.env
+node_modules
+/logging
+uploads/*
+schema.sql
