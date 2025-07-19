@@ -298,6 +298,20 @@ export const updatePenName = async (req, res) => {
       logger.error("❌ Pen name is required", JSON.stringify(set_res));
       return res.status(400).json(set_res);
     }
+
+    
+    // CheckPenName
+    const [existingPenName] = await db.query(constant.CheckPenName, [pen_name]);
+    if (existingPenName.length > 0) {
+      let set_res = {
+        statusCode: 400,
+        message: "Pen name already exists",
+        data: null
+      };
+      logger.error("❌ Pen name already exists", JSON.stringify(set_res));
+      return res.status(400).json(set_res);
+    }
+    
     const role = "author";
     const [result] = await db.query(constant.updatePenName, [pen_name, role, userId]);
 
