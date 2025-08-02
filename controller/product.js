@@ -381,3 +381,51 @@ export const UpdateIsComplete = async (req, res) => {
     return res.status(500).json(set_res);
   }
 };
+
+export const UpdateFollowers = async (req, res) => {
+  try {
+    const bookId = req.body.book_id;
+    const userId = req.body.user_id;
+    // Check if the book exists
+    const [book] = await db.query(constantBook.getProductID, [bookId]);
+    if (book.length === 0) {
+      let set_res = {
+        statusCode: 404,
+        message: "Book not found",
+        data: null
+      };
+      return res.status(404).json(set_res);
+    }
+
+    // Check if the user is already following the book
+    const [existingFollow] = await db.query("SELECT * FROM book_followers WHERE book_id = ? AND user_id = ?", [bookId, userId]);
+    
+    if (existingFollow.length > 0) {
+      // User is already following, so we unfollow
+      await db.query("DELETE FROM book_followers WHERE book_id = ? AND user_id = ?", [bookId, userId]);
+      let set_res = {
+        statusCode: 200,
+        message: "Unfollowed the book successfully",
+        data: null
+      };
+      return res.status(200).json(set_res);
+    } else {
+      // User is not following, so we follow
+      await db.query("INSERT INTO book_followers (book_id, user_id) VALUES (?, ?)", [bookId, userId]);
+      let set_res = {
+        statusCode: 200,
+        message: "Followed the book successfully",
+        data: null
+      };
+      return res.status(200).json(set_res);
+    }
+  } catch (error) {
+    let set_res = {
+      statusCode: 500,
+      message: "Server error",
+      data: error.message
+    };
+    logger.error(`❌ Failed to update followers for book ID ${req.params.id}: ${error.message}`);
+    return res.status(500).json(set_res);
+  }
+};

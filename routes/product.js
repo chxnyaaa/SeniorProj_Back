@@ -7,6 +7,7 @@ import { getProduct
         , CreateProduct
         , UpdateProduct
         , UpdateIsComplete
+        , UpdateFollowers
     } from "../controller/product.js"
 import { upload } from "../middlewares/multer.js" // 👈 import multer middleware
 
@@ -18,5 +19,6 @@ router.post("/search", searchProduct)
 router.post("/", upload.single("cover"), CreateProduct)
 router.put("/:id", upload.single("cover"), UpdateProduct)
 router.put("/:id/status", UpdateIsComplete)
+router.post("/follow", UpdateFollowers)
 
 export default router
