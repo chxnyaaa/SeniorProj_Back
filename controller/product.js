@@ -58,7 +58,7 @@ export const CreateProduct = async (req, res) => {
 
     }
 
-
+    // iูปแบบการส่งข้อมูลกลับ 61-69
     let set_res = {
       statusCode: 200,
       message: "Product created successfully",
@@ -144,6 +144,7 @@ export const UpdateProduct = async (req, res) => {
         cover_url: cover_url || null // ส่ง null ถ้าไม่มีไฟล์ใหม่
       }
     };
+    console.log(set_res);
     logger.info(`✅ Product ID ${productId} updated successfully`);
     return res.status(200).json(set_res);
 
