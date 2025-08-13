@@ -1,6 +1,7 @@
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import e from "express";
 
 const rootUploadDir = path.resolve(process.cwd(), "uploads");
 
@@ -17,17 +18,12 @@ const storage = multer.diskStorage({
     let destFolder = "others"; // fallback
 
     const url = req.originalUrl;
- 
-    if (url.includes("/product")) {
-      destFolder = "book_covers";
-    } else if (url.includes("/episode")) {
-        if (file.fieldname === "audio") {
-          destFolder = "episode_audio";
-        } else if (file.fieldname === "file") {
-          destFolder = "episode_documents"; // เก็บ PDF
-        } else {
-          destFolder = "episode_images";
-        }
+    if (url.includes("/api/profile")) {
+      destFolder = "avatar";
+    }else if (url.includes("/api/books")) {
+      destFolder = "books";
+    }else if (url.includes("/api/episodes")) {
+      destFolder = "cover";
     }
 
     const uploadPath = path.join(rootUploadDir, destFolder);
@@ -36,7 +32,8 @@ const storage = multer.diskStorage({
   },
 
   filename: (req, file, cb) => {
-    const userId = req.body.author_id || req.body.user_id || "unknown";
+    const EpisodeId = req.params.EpisodeId;
+    const userId = req.body.userId  || EpisodeId || "unknown";
     const timestamp = new Date().toISOString().replace(/[-T:.Z]/g, "");
     const ext = path.extname(file.originalname);
     const filename = `${userId}_${timestamp}${ext}`;

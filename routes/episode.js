@@ -5,23 +5,12 @@ import { getEpisodeProduct
         , getEpisodeID
         , CreateEpisode
         , UpdateEpisode
+        , callBotNoiAPI
     } from "../controller/episode.js"
 import { upload } from "../middlewares/multer.js" // 👈 import multer middleware
-
-router.get("/:product", getEpisodeProduct)
-router.get("/:product/:count", getEpisodeID)
-
-router.post("/", upload.fields([
-  { name: "cover", maxCount: 1 },
-  { name: "audio", maxCount: 1 },
-  { name: "file", maxCount: 1 } // PDF
-]), CreateEpisode)
-
-router.put("/:id", upload.fields([
-  { name: "cover", maxCount: 1 },
-  { name: "audio", maxCount: 1 },
-  { name: "file", maxCount: 1 } // PDF
-]), UpdateEpisode)
-
-
+router.get("/:BookId", getEpisodeProduct)
+router.get("/:BookId/:EpisodeId", getEpisodeID)
+router.post('/', upload.fields([{ name: 'cover', maxCount: 1 }]), CreateEpisode)
+router.put('/:EpisodeId', upload.fields([{ name: 'cover', maxCount: 1 }]), UpdateEpisode)
+router.post('/call-bot-noi', callBotNoiAPI);
 export default router
