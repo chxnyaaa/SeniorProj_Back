@@ -37,6 +37,8 @@ export const getEpisodeID = async (req, res) => {
 }
 export const CreateEpisode = async (req, res) => {
   try {
+
+    console.log(req.body);
     // ดึงข้อมูลจาก body
     const { book_id, user_id, title, content, is_free, price, release_date, status, priority } = req.body;
 
@@ -53,7 +55,7 @@ export const CreateEpisode = async (req, res) => {
 
     // ตั้งชื่อไฟล์ cover ที่จะใช้เก็บในฐานข้อมูล
     const cover = coverFile.filename;
-    const set_is_free = false;
+    let set_is_free = false;
     if(price == 0) {
       set_is_free = true;
     }
