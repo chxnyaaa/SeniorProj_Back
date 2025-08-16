@@ -37,8 +37,6 @@ export const getEpisodeID = async (req, res) => {
 }
 export const CreateEpisode = async (req, res) => {
   try {
-
-    console.log(req.body);
     // ดึงข้อมูลจาก body
     const { book_id, user_id, title, content, is_free, price, release_date, status, priority } = req.body;
 
@@ -55,7 +53,7 @@ export const CreateEpisode = async (req, res) => {
 
     // ตั้งชื่อไฟล์ cover ที่จะใช้เก็บในฐานข้อมูล
     const cover = coverFile.filename;
-    let set_is_free = false;
+    let  set_is_free = false;
     if(price == 0) {
       set_is_free = true;
     }
@@ -83,6 +81,14 @@ export const CreateEpisode = async (req, res) => {
 
     // รัน query insert
     const [result] = await db.query(query, values);
+    //  call Bot Noi API to generate audio if content is provided
+    if (content) {
+      req.body.EpisodeId = result.insertId; // ส่ง EpisodeId ไปยัง API
+      const audioResponse = await callBotNoiAPI(req, res);
+      if (audioResponse.status !== 200) {
+        return ApiResponse.error(res, "Failed to generate audio", audioResponse.status, 'error');
+      }
+    }
 
     // ส่ง response สำเร็จพร้อม id ที่สร้าง
     return ApiResponse.success(res, { id: result.insertId, message: "Episode created successfully" }, 201, 'success');
@@ -118,6 +124,15 @@ export const UpdateEpisode = async (req, res) => {
         const query = constantEpisode.updateEpisodeQuery;
         const values = [title, content, episodes, price, release_date, status, priority, EpisodeId];
         await db.query(query, values);
+
+        //  call Bot Noi API to generate audio if content is provided
+        if (content) {
+            req.body.EpisodeId = EpisodeId; // ส่ง EpisodeId ไปยัง API
+            const audioResponse = await callBotNoiAPI(req, res);
+            if (audioResponse.status !== 200) {
+                return ApiResponse.error(res, "Failed to generate audio", audioResponse.status, 'error');
+            }
+        }
         
 
         return ApiResponse.success(res, { message: "Episode updated successfully" }, 200, 'success');
@@ -127,18 +142,18 @@ export const UpdateEpisode = async (req, res) => {
     }
 };
 
-
 export const callBotNoiAPI = async (req, res) => {
   try {
-    const { content, language = "th", speaker = "1" } = req.body
+    const { EpisodeId, content, language = "en", speaker = "1" } = req.body
 
-    if (!content) {
-      return ApiResponse.error(res, "Content is required", 400, "error")
+    if( !EpisodeId || !content) {
+      return ApiResponse.error(res, "Episode ID and Content are required", 400, "error")
     }
 
+    const urlBoyNoi = "https://api-voice.botnoi.ai/openapi/v1/generate_audio"
     // เรียก Bot Noi API
     const response = await axios.post(
-      "https://api.botnoi.ai/openapi/v1/generate_audio",
+      urlBoyNoi,
       {
         text: content,
         speaker,
@@ -152,48 +167,44 @@ export const callBotNoiAPI = async (req, res) => {
       {
         headers: {
           "Content-Type": "application/json",
-          "Botnoi-API-Key": process.env.BOTNOI_API_KEY,
+          "Botnoi-Token": process.env.BOTNOI_API_KEY, // ใช้ ENV เก็บ token
         },
       }
     )
 
     const result = response.data
+    // insert log API request
+    await db.query(`
+      INSERT INTO log_api_requests (api_endpoint, request_headers, request_payload, response_headers, response_payload, status)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `, [
+      urlBoyNoi,
+      JSON.stringify(req.headers),
+      JSON.stringify(req.body),
+      JSON.stringify(response.headers),
+      JSON.stringify(result),
+      response.status
+    ]
+    );
 
-    return ApiResponse.success(res, {result}, 200, "success")
+    // ✅ ตรวจว่ามี base64 หรือไม่
+    if (!result.audio_url) {
+      return ApiResponse.error(res, "Audio URL not found in response", 500, "error")
+    }
 
-    // เช็คว่ามี base64 audio กลับมาหรือไม่
-    // if (!result.audio_base64) {
-    //   return ApiResponse.error(res, "No audio data returned from API", 500, "error")
-    // }
+    // update audio_url in table episodes 
+    const resEpisode = await db.query( constantEpisode.updateAudioUrlQuery, 
+      [result.audio_url, EpisodeId]
+    );
+    if (resEpisode[0].affectedRows === 0) {
+      return ApiResponse.error(res, "Failed to update episode audio URL", 500, "error")
+    }
 
-    // สร้างโฟลเดอร์เก็บไฟล์ถ้ายังไม่มี
-    // const audioDir = path.join(process.cwd(), "uploads", "audio")
-    // if (!fs.existsSync(audioDir)) {
-    //   fs.mkdirSync(audioDir, { recursive: true })
-    // }
+    // ส่ง response กลับไป
+    return ApiResponse.success(res, result, 200, "Audio generated successfully");
 
-    // สร้างชื่อไฟล์แบบ unique
-    const fileName = `tts_${Date.now()}.mp3`
-    const filePath = path.join(audioDir, fileName)
-
-    // เขียนไฟล์ mp3 จาก base64 ลงในโฟลเดอร์
-    // fs.writeFileSync(filePath, Buffer.from(result.audio_base64, "base64"))
-
-    // ตอบกลับข้อมูลให้ client
-    // return ApiResponse.success(
-    //   res,
-    //   {
-    //     text: result.text,
-    //     file: `/uploads/audio/${fileName}`,
-    //     audio_url: result.audio_url || null,
-    //     language,
-    //     speaker,
-    //   },
-    //   200,
-    //   "success"
-    // )
   } catch (error) {
-    console.error("Bot Noi API error:", error)
+    console.error("Bot Noi API error:", error.response?.data || error.message)
     return ApiResponse.error(res, "Failed to generate audio", 500, "error")
   }
 }
