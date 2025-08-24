@@ -44,7 +44,7 @@ CREATE TABLE episodes (
   priority INT DEFAULT 1,
   release_date DATE,
   status ENUM('draft', 'published', 'archived') NOT NULL DEFAULT 'draft',
-  audio_id INT,
+  audio_url VARCHAR(255),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
