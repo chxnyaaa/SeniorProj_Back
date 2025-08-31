@@ -159,8 +159,6 @@ export const UpdateProduct = async (req, res) => {
   }
 };
 
-
-
 export const getProductID = async (req, res) => {
   try {
     const { count } = req.params;
@@ -170,18 +168,13 @@ export const getProductID = async (req, res) => {
     const [products] = await db.query(constantBook.getProductID, [parseInt(count)]);
     const [episodes] = await db.query(constantEpisode.GetEpisodesByBookId, [parseInt(count)]);
 
-    // let set_res = {
-    //   statusCode: 200,
-    //   message: "Product fetched successfully",
-    //   data: products,
-    //   episodes: episodes
-    // };
     let set_res = {
       statusCode: 200,
       message: "Product fetched successfully",
       data: {
         product: products?.[0] || null,
-        episodes: episodes || []
+        episodes: episodes || [],
+        count_following: episodes.length
       }
     };
 
@@ -196,39 +189,6 @@ export const getProductID = async (req, res) => {
     return res.status(500).json(set_res);
   }
 };
-
-// export const getProduct = async (req, res) => {
-//   try {
-//     const { count } = req.query;
-//     const limit = count ? parseInt(count) : 10; // default 10
-//     if (isNaN(limit) || limit <= 0) {
-//       let set_res = {
-//         statusCode: 400,
-//         message: "Invalid count parameter",
-//         data: null
-//       };
-//       return res.status(400).json(set_res);
-//     }
-//     const [products] = await db.query(constantBook.getProduct, [limit]);
-
-//     let set_res = {
-//       statusCode: 200,
-//       message: "Products fetched successfully",
-//       data: products
-//     };
-//     logger.info(`✅ Fetched ${products.length} products`);
-//     return res.status(200).json(set_res);
-//   } catch (err) {
-//     let set_res = {
-//       statusCode: 500,
-//       message: "Server error",
-//       data: err.message
-//     };
-//     logger.error(`❌ Failed to fetch products: ${err.message}`);
-//     return res.status(500).json(set_res);
-//   }
-// };
-
 
 export const getProduct = async (req, res) => {
   try {

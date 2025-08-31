@@ -8,10 +8,14 @@ import { readdirSync } from "fs"
 import basicAuth from "basic-auth"
 
 import authRoutes from "./routes/auth.js"
-import productRoutes from "./routes/product.js"
-import loginRoutes from "./routes/login.js"
 import profileRoutes from "./routes/profile.js"
+import coinRoutes from "./routes/coin.js"
+import purchaseRoutes from "./routes/purchase.js"
+import userRoutes from "./routes/user.js"
+import bookRoutes from "./routes/book.js"
 import episodeRoutes from "./routes/episode.js"
+import devRoutes from "./routes/dev.js"
+
 import e from "express"
 
 const app = express()
@@ -25,6 +29,7 @@ app.use("/uploads", express.static("uploads"))
 
 // Static assets (อื่น ๆ)
 app.use(express.static("public"))
+
 
 // Basic Auth middleware
 const authMiddleware = (req, res, next) => {
@@ -41,12 +46,15 @@ const authMiddleware = (req, res, next) => {
 
 app.use(authMiddleware)
 
-// Routes
-app.use("/signup", authRoutes)
-app.use("/login", loginRoutes)
-app.use("/profile", profileRoutes)
-app.use("/product", productRoutes)
-app.use("/episode", episodeRoutes)
+// routes
+app.use("/api/auth", authRoutes);
+app.use("/api/profile", profileRoutes);
+app.use("/api/coins", coinRoutes);
+app.use("/api/purchases", purchaseRoutes);
+app.use("/api/user", userRoutes);
+app.use("/api/books", bookRoutes);
+app.use("/api/episodes", episodeRoutes);
+app.use("/api/dev", devRoutes);
 
 
 // Start server
