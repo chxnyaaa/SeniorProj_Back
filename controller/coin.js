@@ -21,7 +21,7 @@ export const checkin = async (req, res) => {
     // 2. ถ้ายังไม่เคย check-in วันนี้ ให้ insert ข้อมูล check-in
     const resCheckins  = await db.query(constantCoins.addDataCheckins, [userId]);
     
-    let Coins = 1;
+    let Coins = 5;
     let type = 'daily_checkin';
     // 3. เพิ่มเหรียญ (coins) ให้ user
     await db.query( constantCoins.addCoins, [userId, Coins, type] );

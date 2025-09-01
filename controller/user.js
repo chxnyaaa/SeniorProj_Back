@@ -167,7 +167,7 @@ export const addUserUpdateHistory = async (req, res) => {
       return ApiResponse.error(res, "userId is required", 400, "error");
     }
 
-    const deviceVal = device || "web";
+    const deviceVal = device || "Web";
     const ipVal = ipAddress || "";
     const viewed_at = new Date().toISOString().slice(0, 19).replace("T", " ");
     
