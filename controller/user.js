@@ -143,3 +143,82 @@ export const getUserFavorites = async (req, res) => {
   }
 };
 
+
+export const getUserHistory = async (req, res) => {
+  try {
+    const { userId } = req.body;
+    if (!userId) {
+      return ApiResponse.error(res, "User ID is required", 400, "error");
+    }
+
+    const [history] = await db.query(constantUser.getUserHistoryQuery, [userId]);
+    return ApiResponse.success(res, history, 200, "User history fetched successfully");
+  } catch (err) {
+    logger.error(`❌ Failed to fetch user history: ${err.message}`);
+    return ApiResponse.error(res, "Server error", 500, "error");
+  }
+};
+
+export const addUserUpdateHistory = async (req, res) => {
+  try {
+    const { userId, bookId, episodeId, device, ipAddress } = req.body;
+
+    if (!userId) {
+      return ApiResponse.error(res, "userId is required", 400, "error");
+    }
+
+    const deviceVal = device || "web";
+    const ipVal = ipAddress || "";
+    const viewed_at = new Date().toISOString().slice(0, 19).replace("T", " ");
+    
+    console.log('Viewed at:', viewed_at);
+
+    // ✅ ดึงรายการล่าสุด
+   let query = `
+      SELECT count(*)
+      FROM user_history
+      WHERE user_id = ? 
+        AND book_id = ? 
+        AND viewed_at = ?
+    `;
+
+    const params = [userId, bookId, viewed_at];
+
+    if (episodeId === null || episodeId === undefined) {
+      query += " AND episode_id IS NULL";
+    } else {
+      query += " AND episode_id = ?";
+      params.push(episodeId);
+    }
+
+    const [rows] = await db.query(query, params);
+    console.log('rows:', rows);
+    const count = rows[0]['count(*)'] || 0;
+    if (count > 0) {
+        logger.info(
+          `✅ Duplicate found → userId=${userId}, bookId=${bookId}, episodeId=${episodeId}, skipping insert.`
+        );
+        return ApiResponse.success(res, null, 200, "Duplicate entry found");
+    }else{
+        // ✅ insert ถ้าไม่ซ้ำ
+        await db.query(constantUser.insertUserUpdateHistoryQuery, [
+          userId,
+          bookId || null,
+          episodeId || null,
+          deviceVal,
+          ipVal,
+        ]);
+        logger.info(
+          `✅ History saved → userId=${userId}, bookId=${bookId}, episodeId=${episodeId}`
+        );
+        return ApiResponse.success(res, null, 200, "Update history saved successfully");
+    }
+
+  } catch (err) {
+    logger.error(`❌ Failed to save history: ${err.message}`);
+    return ApiResponse.error(res, "Server error", 500, "error");
+  }
+};
+
+
+
