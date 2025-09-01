@@ -125,15 +125,21 @@ export const UpdateEpisode = async (req, res) => {
         const values = [title, content, episodes, price, release_date, status, priority, EpisodeId];
         await db.query(query, values);
 
-        //  call Bot Noi API to generate audio if content is provided
-        if (content) {
-            req.body.EpisodeId = EpisodeId; // ส่ง EpisodeId ไปยัง API
-            const audioResponse = await callBotNoiAPI(req, res);
-            if (audioResponse.status !== 200) {
-                return ApiResponse.error(res, "Failed to generate audio", audioResponse.status, 'error');
+
+        //เช็คก่อนว่า content ซ้ำกับอันเดิมไหม ถ้า ซ้ำไม่ต้องทำ Bot Noi
+        const [existingContent] = await db.query('SELECT content FROM episodes WHERE id = ?', [EpisodeId]);
+        if (existingContent.length > 0 && existingContent[0].content === content) {
+            logger.info(`✅ Content is duplicate → EpisodeId=${EpisodeId}, skipping Bot Noi API.`);
+        } else {
+            //  call Bot Noi API to generate audio if content is provided
+            if (content) {
+                req.body.EpisodeId = EpisodeId; // ส่ง EpisodeId ไปยัง API
+                const audioResponse = await callBotNoiAPI(req, res);
+                if (audioResponse.status !== 200) {
+                    return ApiResponse.error(res, "Failed to generate audio", audioResponse.status, 'error');
+                }
             }
         }
-        
 
         return ApiResponse.success(res, { message: "Episode updated successfully" }, 200, 'success');
     } catch (error) {
