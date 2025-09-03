@@ -161,14 +161,12 @@ export const getUserHistory = async (req, res) => {
 
 export const addUserUpdateHistory = async (req, res) => {
   try {
-    const { userId, bookId, episodeId, device, ipAddress } = req.body;
+    const { userId, bookId, episodeId} = req.body;
 
     if (!userId) {
       return ApiResponse.error(res, "userId is required", 400, "error");
     }
 
-    const deviceVal = device || "Web";
-    const ipVal = ipAddress || "";
     const viewed_at = new Date().toISOString().slice(0, 19).replace("T", " ");
     
     console.log('Viewed at:', viewed_at);
@@ -204,9 +202,7 @@ export const addUserUpdateHistory = async (req, res) => {
         await db.query(constantUser.insertUserUpdateHistoryQuery, [
           userId,
           bookId || null,
-          episodeId || null,
-          deviceVal,
-          ipVal,
+          episodeId || null
         ]);
         logger.info(
           `✅ History saved → userId=${userId}, bookId=${bookId}, episodeId=${episodeId}`

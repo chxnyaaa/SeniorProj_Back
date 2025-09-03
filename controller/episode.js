@@ -38,7 +38,7 @@ export const getEpisodeID = async (req, res) => {
 export const CreateEpisode = async (req, res) => {
   try {
     // ดึงข้อมูลจาก body
-    const { book_id, user_id, title, content, is_free, price, release_date, status, priority } = req.body;
+    const { book_id, user_id, title, content, is_free, price, release_date, status, priority, sound } = req.body;
 
     if (!book_id || !user_id || !title || !content) {
       return ApiResponse.error(res, "Book ID, User ID, Title, and Content are required", 400, 'error');
@@ -75,7 +75,8 @@ export const CreateEpisode = async (req, res) => {
       cover,
       release_date,
       status || 'draft',
-      priority || 1
+      priority || 1,
+      sound || '101'
     ];
 
 
@@ -102,7 +103,7 @@ export const CreateEpisode = async (req, res) => {
 export const UpdateEpisode = async (req, res) => {
     try {
         const { EpisodeId } = req.params;
-        const { title, content, price, release_date, status, priority } = req.body;
+        const { title, content, price, release_date, status, priority, sound } = req.body;
         const episodeFile = req.files?.['cover']?.[0];
 
         let episodes;
@@ -121,23 +122,25 @@ export const UpdateEpisode = async (req, res) => {
             episodes = existing[0].cover;
         }
 
-        const query = constantEpisode.updateEpisodeQuery;
-        const values = [title, content, episodes, price, release_date, status, priority, EpisodeId];
-        await db.query(query, values);
+        
 
-
-        //เช็คก่อนว่า content ซ้ำกับอันเดิมไหม ถ้า ซ้ำไม่ต้องทำ Bot Noi
+        let status_generate = true;
+        // //เช็คก่อนว่า content ซ้ำกับอันเดิมไหม ถ้า ซ้ำไม่ต้องทำ Bot Noi
         const [existingContent] = await db.query('SELECT content FROM episodes WHERE id = ?', [EpisodeId]);
-        if (existingContent.length > 0 && existingContent[0].content === content) {
-            logger.info(`✅ Content is duplicate → EpisodeId=${EpisodeId}, skipping Bot Noi API.`);
-        } else {
-            //  call Bot Noi API to generate audio if content is provided
-            if (content) {
-                req.body.EpisodeId = EpisodeId; // ส่ง EpisodeId ไปยัง API
-                const audioResponse = await callBotNoiAPI(req, res);
-                if (audioResponse.status !== 200) {
-                    return ApiResponse.error(res, "Failed to generate audio", audioResponse.status, 'error');
-                }
+        if (existingContent.length > 0 && existingContent[0].content == content) {
+            status_generate = false;
+        }
+
+        const query = constantEpisode.updateEpisodeQuery;
+        const values = [title, content, episodes, price, release_date, status, priority, sound, EpisodeId];
+        await db.query(query, values);
+        
+
+        if (status_generate) {
+            req.body.EpisodeId = EpisodeId; // ส่ง EpisodeId ไปยัง API
+            const audioResponse = await callBotNoiAPI(req, res);
+            if (audioResponse.status !== 200) {
+                return ApiResponse.error(res, "Failed to generate audio", audioResponse.status, 'error');
             }
         }
 
@@ -150,7 +153,9 @@ export const UpdateEpisode = async (req, res) => {
 
 export const callBotNoiAPI = async (req, res) => {
   try {
-    const { EpisodeId, content, language = "en", speaker = "1" } = req.body
+    const { EpisodeId, content, language = "en", sound = "101" } = req.body
+
+    let speaker = sound
 
     if( !EpisodeId || !content) {
       return ApiResponse.error(res, "Episode ID and Content are required", 400, "error")

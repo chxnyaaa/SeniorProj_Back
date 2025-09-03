@@ -45,6 +45,7 @@ CREATE TABLE episodes (
   release_date DATE,
   status ENUM('draft', 'published', 'archived') NOT NULL DEFAULT 'draft',
   audio_url VARCHAR(255),
+  sound INT DEFAULT 103,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -113,14 +114,10 @@ CREATE TABLE log_api_requests (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-
-
 CREATE TABLE user_history (
   id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT NOT NULL,
   book_id INT NULL,        -- ถ้าดูหนังสือ
   episode_id INT NULL,     -- ถ้าดู episode
-  viewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  device VARCHAR(50),      -- อุปกรณ์ (optional เช่น mobile, web)
-  ip_address VARCHAR(45)  -- เก็บ IP ของผู้ใช้ (optional)
+  viewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
