@@ -121,3 +121,23 @@ CREATE TABLE user_history (
   episode_id INT NULL,     -- ถ้าดู episode
   viewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- ตารางเก็บตอนใหม่ที่ปล่อย
+CREATE TABLE transaction_new_episode (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  book_id INT NOT NULL,
+  episode_id INT NOT NULL,
+  notify_type ENUM('COMING_SOON', 'AVAILABLE') NOT NULL, -- ประเภทการแจ้งเตือน
+  release_at TIMESTAMP NULL, -- กรณีที่ COMING_SOON จะมีวันปล่อยจริง
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ตารางเก็บว่า user คนไหน "อ่านแล้ว" หรือ "กดเคลียร์การแจ้งเตือนแล้ว"
+CREATE TABLE user_new_episode (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  episode_id INT NOT NULL,
+  user_id INT NOT NULL,
+  read_at TIMESTAMP NULL, -- null = ยังไม่ได้อ่าน
+  cleared_at TIMESTAMP NULL, -- null = ยังไม่ลบแจ้งเตือน
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

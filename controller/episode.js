@@ -76,15 +76,26 @@ export const CreateEpisode = async (req, res) => {
       release_date,
       status || 'draft',
       priority || 1,
-      sound || '101'
+      sound || '103'
     ];
 
 
     // รัน query insert
     const [result] = await db.query(query, values);
+    const episodeId = result.insertId;
+
+    let notifyType = 'AVAILABLE';
+    if (release_date && new Date(release_date) > new Date()) {
+      notifyType = 'COMING_SOON';
+    }
+    await db.query(
+      `INSERT INTO transaction_new_episode (book_id, episode_id, notify_type, release_at)
+      VALUES (?, ?, ?, ?)`,
+      [book_id, episodeId, notifyType, release_date || null]
+    );
     //  call Bot Noi API to generate audio if content is provided
     if (content) {
-      req.body.EpisodeId = result.insertId; // ส่ง EpisodeId ไปยัง API
+      req.body.EpisodeId = episodeId; // ส่ง EpisodeId ไปยัง API
       const audioResponse = await callBotNoiAPI(req, res);
       if (audioResponse.status !== 200) {
         return ApiResponse.error(res, "Failed to generate audio", audioResponse.status, 'error');
@@ -92,7 +103,7 @@ export const CreateEpisode = async (req, res) => {
     }
 
     // ส่ง response สำเร็จพร้อม id ที่สร้าง
-    return ApiResponse.success(res, { id: result.insertId, message: "Episode created successfully" }, 201, 'success');
+    return ApiResponse.success(res, { id: episodeId, message: "Episode created successfully" }, 201, 'success');
   } catch (error) {
     logger.error("Error creating episode:", error);
     return ApiResponse.error(res, "Failed to create episode", 500, 'error');
@@ -153,7 +164,7 @@ export const UpdateEpisode = async (req, res) => {
 
 export const callBotNoiAPI = async (req, res) => {
   try {
-    const { EpisodeId, content, language = "en", sound = "101" } = req.body
+    const { EpisodeId, content, language = "en", sound = "103" } = req.body
 
     let speaker = sound
 
