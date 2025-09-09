@@ -25,8 +25,27 @@ export const purchasesEpisode = async (req, res) => {
       return ApiResponse.error(res, 'Episode already purchased', 400, 'error');
     }
 
+    let getEpisodesQuery = `SELECT 
+                    a.price, 
+                    a.title AS title_episode,
+                    b.title AS title_book
+                FROM episodes a
+                LEFT JOIN books b
+                    ON a.book_id = b.id
+                WHERE a.id = ?
+                  AND a.book_id = ?`;
+      const [episodeRows] = await db.query(getEpisodesQuery, [episodeId, bookId]);
+
+      if (episodeRows.length === 0) {
+        return ApiResponse.error(res, `Episode ${episodeId} not found`, 404, 'error');
+      }
+
+      let title_episode = episodeRows[0].title_episode;
+      let title_book = episodeRows[0].title_book;
+
     // add coins transaction
-    await db.query(constantCoins.addCoinsEpisode, [userId, -amount, 'spend', `Purchased episode ${episodeId} of book ${bookId}`]);
+    // await db.query(constantCoins.addCoinsEpisode, [userId, -amount, 'spend', `Purchased episode ${episodeId} of book ${bookId}`]);
+    await db.query(constantCoins.addCoinsEpisode, [userId, -amount, 'spend', `Purchased ${title_book}: ${title_episode}`]);
     // Insert purchase record
     await db.query(constantPurchase.addPurchase, [userId, bookId, episodeId, amount]);
     return ApiResponse.success(res, null, 200, 'Purchase successful');
