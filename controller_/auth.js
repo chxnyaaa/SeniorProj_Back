@@ -17,9 +17,10 @@ export const signup = async (req, res) => {
             return ApiResponse.error(res, 'User already exists', 400, 'error');
         }
         const pen_name = null
+        const Userrole = ""
         const hashedPassword = await bcrypt.hash(password, 10)
-        const dataa = await db.query(constantAuth.insertUsers, [username, email, hashedPassword])
-        return ApiResponse.success(res, dataa, 201, 'User created successfully');
+        await db.query(constantAuth.insertUsers, [username, email, hashedPassword, Userrole])
+        return ApiResponse.success(res, null, 201, 'User created successfully');
 
     }catch(err){
         logger.error(`❌ Failed to create user: ${err.message}`);
